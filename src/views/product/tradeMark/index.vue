@@ -14,24 +14,22 @@
         label="品牌名称"
         width="width"
       ></el-table-column>
-      <el-table-column prop="logoUrl" label="品牌LOGO" width="width">
+      <el-table-column prop="logoUrl" label="品牌LOGO" width="width" align="center">
         <template slot-scope="{ row }">
           <img :src="row.logoUrl" style="width: 100px; height: 100px" />
         </template>
       </el-table-column>
-      <el-table-column prop="prop" label="操作" width="width">
+      <el-table-column prop="prop" label="操作" width="width" align="center">
         <template slot-scope="{ row }">
           <el-button
             type="warning"
             icon="el-icon-edit"
-            size="mini"
             @click="updateTradeMark(row)"
             >修改</el-button
           >
           <el-button
             type="danger"
             icon="el-icon-delete"
-            size="mini"
             @click="deleteTradeMark(row)"
             >删除</el-button
           >
