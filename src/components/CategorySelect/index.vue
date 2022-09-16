@@ -3,7 +3,7 @@
     <!-- inline表示为行内表单即一行内可以放入多个表单元素 -->
     <el-form :inline="true" :model="cForm" class="demo-form-inline">
       <el-form-item label="一级分类">
-        <el-select v-model="cForm.category1Id" placeholder="请选择">
+        <el-select v-model="cForm.category1Id" placeholder="请选择" :disabled="show">
           <el-option
             :label="c1.name"
             :value="c1.id"
@@ -13,7 +13,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="二级分类" style="margin-left: 20px">
-        <el-select v-model="cForm.category2Id" placeholder="请选择">
+        <el-select v-model="cForm.category2Id" placeholder="请选择" :disabled="show">
           <el-option
             :label="c2.name"
             :value="c2.id"
@@ -23,7 +23,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="三级分类" style="margin-left: 20px">
-        <el-select v-model="cForm.category3Id" placeholder="请选择">
+        <el-select v-model="cForm.category3Id" placeholder="请选择" :disabled="show">
           <el-option
             :label="c3.name"
             :value="c3.id"
@@ -52,6 +52,7 @@ export default {
       },
     };
   },
+  props:['show'],
   watch: {
     "cForm.category1Id": {
       handler(newVal) {
