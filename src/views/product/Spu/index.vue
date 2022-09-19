@@ -13,6 +13,8 @@
           type="primary"
           icon="el-icon-plus"
           style="margin-bottom: 25px"
+          :disabled="!cForm.category3Id"
+          @click="addSpu"
           >添加SPU</el-button
         >
         <el-table style="width: 100%" border :data="spuList">
@@ -33,7 +35,7 @@
             width=""
           ></el-table-column>
           <el-table-column prop="prop" label="操作" width="">
-            <template>
+            <template slot-scope="{ row }">
               <el-tooltip content="添加SKU" placement="bottom">
                 <el-button
                   type="success"
@@ -47,6 +49,7 @@
                   icon="el-icon-edit"
                   size="mini"
                   style="margin-left: 20px"
+                  @click="updateSpu(row)"
                 ></el-button>
               </el-tooltip>
               <el-tooltip content="查看当前SKU的全部SKU列表" placement="bottom">
@@ -78,7 +81,7 @@
         ></el-pagination>
       </div>
       <!-- 添加或修改SPU -->
-      <SpuForm v-show="showTable===1"></SpuForm>
+      <SpuForm v-show="showTable===1" ref="spu" :changeShowTable.sync="showTable"></SpuForm>
       <!-- 添加SKU -->
       <SkuForm v-show="showTable===2"></SkuForm>
     </el-card>
@@ -131,6 +134,13 @@ export default {
     handleCurrentChange(page) {
       this.page = page;
       this.getSpuList();
+    },
+    addSpu(){
+      this.showTable=1
+    },
+    updateSpu(row){
+      this.showTable=1
+      this.$refs.spu.initSpuData(row)
     },
   },
 };
