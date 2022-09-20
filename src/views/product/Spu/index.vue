@@ -3,12 +3,12 @@
     <el-card style="margin: 20px 0">
       <CategorySelect
         @getCategoryId="getList"
-        :show="showTable===0?false:true"
+        :show="showTable === 0 ? false : true"
       ></CategorySelect>
     </el-card>
     <el-card>
       <!-- 展示列表 -->
-      <div v-show="showTable===0">
+      <div v-show="showTable === 0">
         <el-button
           type="primary"
           icon="el-icon-plus"
@@ -41,6 +41,7 @@
                   type="success"
                   icon="el-icon-plus"
                   size="mini"
+                  @click="addSku(cForm,row)"
                 ></el-button>
               </el-tooltip>
               <el-tooltip content="修改SPU" placement="bottom">
@@ -66,6 +67,7 @@
                   icon="el-icon-delete"
                   size="mini"
                   style="margin-left: 20px"
+                  @click="deleteSpu(row)"
                 ></el-button>
               </el-tooltip>
             </template>
@@ -81,9 +83,13 @@
         ></el-pagination>
       </div>
       <!-- 添加或修改SPU -->
-      <SpuForm v-show="showTable===1" ref="spu" :changeShowTable.sync="showTable"></SpuForm>
+      <SpuForm
+        v-show="showTable === 1"
+        ref="spu"
+        @changeShowTable="changeShowTable"
+      ></SpuForm>
       <!-- 添加SKU -->
-      <SkuForm v-show="showTable===2"></SkuForm>
+      <SkuForm v-show="showTable === 2" ref="sku" @changeShowTable="changeShowTable"></SkuForm>
     </el-card>
   </div>
 </template>
@@ -102,7 +108,7 @@ export default {
       page: 1,
       limit: 5,
       total: 0,
-      showTable: 0,//0展示列表，1表示添加或修改SPU，2表示添加SKU
+      showTable: 0, //0展示列表，1表示添加或修改SPU，2表示添加SKU
     };
   },
   components: { CategorySelect, SkuForm, SpuForm },
@@ -120,7 +126,8 @@ export default {
         this.getSpuList();
       }
     },
-    async getSpuList() {
+    async getSpuList(page = 1) {
+      this.page = page;
       let res = await req.spu.reqSpuList(
         this.page,
         this.limit,
@@ -133,15 +140,56 @@ export default {
     },
     handleCurrentChange(page) {
       this.page = page;
-      this.getSpuList();
+      this.getSpuList(this.page);
     },
-    addSpu(){
-      this.showTable=1
+    addSpu() {
+      this.showTable = 1;
+      this.$refs.spu.initAddSpuData(this.cForm.category3Id);
     },
-    updateSpu(row){
-      this.showTable=1
-      this.$refs.spu.initSpuData(row)
+    updateSpu(row) {
+      this.showTable = 1;
+      this.$refs.spu.initUpdateSpuData(row);
     },
+    changeShowTable(config) {
+      this.showTable = config.show;
+      if (config.flag === "update") {
+        this.getSpuList(this.page);
+      } else {
+        this.getSpuList();
+      }
+    },
+    async deleteSpu(row) {
+      this.$confirm(`此操作将永久删除该SPU, 是否继续?`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(async () => {
+          let res = await req.spu.reqDeleteSpu(row.id);
+          if (res.code === 200) {
+            this.$message({
+              type: "success",
+              message: "删除成功!",
+            });
+            this.getSpuList(this.page);
+          }else{
+            this.$message({
+              type: "error",
+              message: "删除失败!",
+            });
+          }
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
+    },
+    addSku(cForm,row){
+      this.showTable=2
+      this.$refs.sku.getData(cForm,row)
+    }
   },
 };
 </script>

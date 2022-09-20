@@ -73,10 +73,10 @@
             <template slot-scope="{ row }">
               <el-tag
                 :key="tag.id"
-                v-for="tag in row.spuSaleAttrValueList"
+                v-for="(tag, index) in row.spuSaleAttrValueList"
                 closable
                 :disable-transitions="false"
-                @close="handleClose(tag)"
+                @close="handleClose(row, index)"
               >
                 {{ tag.saleAttrValueName }}
               </el-tag>
@@ -86,33 +86,34 @@
                 v-model="row.inputValue"
                 ref="saveTagInput"
                 size="small"
-                @keyup.enter.native="handleInputConfirm"
-                @blur="handleInputConfirm"
+                @keyup.enter.native="$refs.saveTagInput.blur()"
+                @blur="handleInputConfirm(row)"
               >
               </el-input>
               <el-button
                 v-else
                 class="button-new-tag"
                 size="small"
-                @click="showInput"
+                @click="addSaleAttrValue(row)"
                 >添加</el-button
               >
             </template>
           </el-table-column>
           <el-table-column label="操作" width="150">
-            <template slot-scope="{ row }">
+            <template slot-scope="{ $index }">
               <el-button
                 type="danger"
                 size="mini"
                 icon="el-icon-delete"
+                @click="spu.spuSaleAttrList.splice($index, 1)"
               ></el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary">保存</el-button>
-        <el-button @click="$emit('update:changeShowTable', 0)">取消</el-button>
+        <el-button type="primary" @click="addOrUpdateSpu">保存</el-button>
+        <el-button @click="cancel">取消</el-button>
       </el-form-item>
     </el-form>
   </div>
@@ -157,33 +158,56 @@ export default {
       this.spuImgList = fileList;
     },
     handleSuccess(response, file, fileList) {
-      console.log(2);
       this.spuImgList = fileList;
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
       this.dialogVisible = true;
     },
-    handleClose(tag) {
-      this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+    handleClose(row, index) {
+      row.spuSaleAttrValueList.splice(index, 1);
     },
-
-    showInput() {
-      this.inputVisible = true;
+    addSaleAttrValue(row) {
+      this.$set(row, "inputVisible", true);
+      this.$set(row, "inputValue", "");
       this.$nextTick((_) => {
         this.$refs.saveTagInput.$refs.input.focus();
       });
     },
 
-    handleInputConfirm() {
-      let inputValue = this.inputValue;
-      if (inputValue) {
-        this.dynamicTags.push(inputValue);
+    handleInputConfirm(row) {
+      const { baseSaleAttrId, inputValue } = row;
+      if (inputValue.trim() === "") {
+        this.$message({
+          type: "error",
+          message: "属性值不能为空",
+        });
+        row.inputVisible = false;
+        this.inputValue = "";
+        return;
       }
-      this.inputVisible = false;
+      if (
+        row.spuSaleAttrValueList.some(
+          (item) => item.saleAttrValueName === inputValue
+        )
+      ) {
+        this.$message({
+          type: "error",
+          message: "属性值不能重复",
+        });
+        row.inputVisible = false;
+        this.inputValue = "";
+        return;
+      }
+      let newSaleAttrValue = {
+        baseSaleAttrId,
+        saleAttrValueName: inputValue,
+      };
+      row.spuSaleAttrValueList.push(newSaleAttrValue);
+      row.inputVisible = false;
       this.inputValue = "";
     },
-    async initSpuData(spu) {
+    async initUpdateSpuData(spu) {
       //该函数在父组件中通过ref调用
       let spuRes = await req.spu.reqSpu(spu.id);
       if (spuRes.code === 200) {
@@ -207,10 +231,49 @@ export default {
         this.saleAttrList = saleRes.data;
       }
     },
-    addSaleAttr(){
-        const [baseSaleAttrId,saleAttrName]=this.attrIdAndName.split(':')
-        let newAttr={baseSaleAttrId,saleAttrName,spuSaleAttrValueList:[]}
-        this.spu.spuSaleAttrList.push(newAttr)
+    async initAddSpuData(category3Id) {
+      this.spu.category3Id=category3Id
+      let tradeMarkRes = await req.spu.reqTradeMarkList();
+      if (tradeMarkRes.code === 200) {
+        this.tradeMarkList = tradeMarkRes.data;
+      }
+      let saleRes = await req.spu.reqBaseSaleList();
+      if (saleRes.code === 200) {
+        this.saleAttrList = saleRes.data;
+      }
+    },
+    addSaleAttr() {
+      const [baseSaleAttrId, saleAttrName] = this.attrIdAndName.split(":");
+      let newAttr = { baseSaleAttrId, saleAttrName, spuSaleAttrValueList: [] };
+      this.spu.spuSaleAttrList.push(newAttr);
+      this.attrIdAndName = "";
+    },
+    async addOrUpdateSpu() {
+      //把图片列表处理成符合服务器要求的格式
+      this.spu.spuImageList = this.spuImgList.map((item) => {
+        return {
+          imgName: item.name,
+          imgUrl: item.imgUrl ? item.imgUrl : item.response.data,
+        };
+      });
+      let res = await req.spu.reqAddOrUpdateSpu(this.spu);
+      if (res.code === 200) {
+        this.$message({
+          type: "success",
+          message: "保存成功",
+        });
+        this.$emit("changeShowTable", {show:0,flag:this.spu.id?'update':'add'});
+        Object.assign(this._data,this.$options.data())
+      }else{
+        this.$message({
+          type: "error",
+          message: "保存失败",
+        });
+      }
+    },
+    cancel(){
+      this.$emit("changeShowTable", {show:0,flag:this.spu.id?'update':'add'});
+      Object.assign(this._data,this.$options.data())
     },
   },
 };
