@@ -17,18 +17,42 @@ export const reqTradeMarkList = () => {
   });
 };
 export const reqSpuImgList = (spuId) => {
-  return request({ url: `/admin/product/spuImageList/${spuId}`, method: "get" });
+  return request({
+    url: `/admin/product/spuImageList/${spuId}`,
+    method: "get",
+  });
 };
 export const reqBaseSaleList = () => {
   return request({ url: "/admin/product/baseSaleAttrList", method: "get" });
 };
-export const reqAddOrUpdateSpu=(spuInfo)=>{
-  if(spuInfo.id){
-    return request({url:'/admin/product/updateSpuInfo',method:'post',data:spuInfo})
-  }else{
-    return request({url:'/admin/product/saveSpuInfo',method:'post',data:spuInfo})
+export const reqAddOrUpdateSpu = (spuInfo) => {
+  if (spuInfo.id) {
+    return request({
+      url: "/admin/product/updateSpuInfo",
+      method: "post",
+      data: spuInfo,
+    });
+  } else {
+    return request({
+      url: "/admin/product/saveSpuInfo",
+      method: "post",
+      data: spuInfo,
+    });
   }
-}
-export const reqDeleteSpu=(spuId)=>{
-  return request({url:`/admin/product/deleteSpu/${spuId}`,method:'delete'})
+};
+export const reqDeleteSpu = (spuId) => {
+  return request({
+    url: `/admin/product/deleteSpu/${spuId}`,
+    method: "delete",
+  });
+};
+export const reqAddSku = (skuInfo) => {
+  return request({
+    url: "/admin/product/saveSkuInfo",
+    method: "post",
+    data: skuInfo,
+  });
+};
+export const reqSkuList=(spuId)=>{
+  return request({url:`/admin/product/findBySpuId/${spuId}`,method:'get'})
 }

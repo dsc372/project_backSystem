@@ -41,7 +41,7 @@
                   type="success"
                   icon="el-icon-plus"
                   size="mini"
-                  @click="addSku(cForm,row)"
+                  @click="addSku(cForm, row)"
                 ></el-button>
               </el-tooltip>
               <el-tooltip content="修改SPU" placement="bottom">
@@ -59,6 +59,7 @@
                   icon="el-icon-info"
                   size="mini"
                   style="margin-left: 20px"
+                  @click="handleDialog(row)"
                 ></el-button>
               </el-tooltip>
               <el-tooltip content="删除SPU" placement="bottom">
@@ -89,8 +90,28 @@
         @changeShowTable="changeShowTable"
       ></SpuForm>
       <!-- 添加SKU -->
-      <SkuForm v-show="showTable === 2" ref="sku" @changeShowTable="changeShowTable"></SkuForm>
+      <SkuForm
+        v-show="showTable === 2"
+        ref="sku"
+        @changeShowTable="changeShowTable"
+      ></SkuForm>
     </el-card>
+    <el-dialog
+      :title="`${spu.spuName}的SKU列表`"
+      :visible.sync="dialogTableVisible"
+      :before-close="closeDialog"
+    >
+      <el-table border :data="skuList" v-loading="loading">
+        <el-table-column prop="skuName" label="名称" width="150"></el-table-column>
+        <el-table-column prop="price" label="价格" width="150"></el-table-column>
+        <el-table-column prop="weight" label="重量" width="150"></el-table-column>
+        <el-table-column  label="默认图片" width="150">
+          <template slot-scope="{row}">
+            <img :src="row.skuDefaultImg" style="height:100px;width:100px">
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -109,6 +130,10 @@ export default {
       limit: 5,
       total: 0,
       showTable: 0, //0展示列表，1表示添加或修改SPU，2表示添加SKU
+      dialogTableVisible: false,
+      spu: {},
+      skuList: [],
+      loading:true,
     };
   },
   components: { CategorySelect, SkuForm, SpuForm },
@@ -172,7 +197,7 @@ export default {
               message: "删除成功!",
             });
             this.getSpuList(this.page);
-          }else{
+          } else {
             this.$message({
               type: "error",
               message: "删除失败!",
@@ -186,9 +211,23 @@ export default {
           });
         });
     },
-    addSku(cForm,row){
-      this.showTable=2
-      this.$refs.sku.getData(cForm,row)
+    addSku(cForm, row) {
+      this.showTable = 2;
+      this.$refs.sku.getData(cForm, row);
+    },
+    async handleDialog(row) {
+      this.dialogTableVisible = true;
+      this.spu = row;
+      let res = await req.spu.reqSkuList(this.spu.id);
+      if (res.code === 200) {
+        this.skuList = res.data;
+        this.loading=false;
+      }
+    },
+    closeDialog(done){
+      this.loading=true
+      this.skuList=[]
+      done()
     }
   },
 };

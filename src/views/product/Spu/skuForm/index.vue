@@ -29,6 +29,7 @@
             :label="attr.attrName"
             v-for="attr in attrInfoList"
             :key="attr.id"
+            style="margin: 0 20px 20px 0"
           >
             <el-select
               value=""
@@ -53,7 +54,11 @@
             :key="saleAttr.id"
             style="margin: 0 20px 20px 0"
           >
-            <el-select value="" placeholder="请选择" v-model="saleAttr.attrIdAndValueId">
+            <el-select
+              value=""
+              placeholder="请选择"
+              v-model="saleAttr.attrIdAndValueId"
+            >
               <el-option
                 :label="saleAttrValue.saleAttrValueName"
                 :value="`${saleAttr.id}:${saleAttrValue.id}`"
@@ -65,24 +70,41 @@
         </el-form>
       </el-form-item>
       <el-form-item label="图片列表">
-        <el-table border :data="spuImageList" @selection-change="handleSelectionChange">
+        <el-table
+          border
+          :data="spuImageList"
+          @selection-change="handleSelectionChange"
+        >
           <el-table-column type="selection" width="80"></el-table-column>
           <el-table-column prop="" label="图片" width="">
-            <template slot-scope="{row}">
-              <img :src="row.imgUrl" alt="" style="width:100px;height:100px">
+            <template slot-scope="{ row }">
+              <img
+                :src="row.imgUrl"
+                alt=""
+                style="width: 100px; height: 100px"
+              />
             </template>
           </el-table-column>
-          <el-table-column prop="imgName" label="名称" width=""></el-table-column>
+          <el-table-column
+            prop="imgName"
+            label="名称"
+            width=""
+          ></el-table-column>
           <el-table-column prop="" label="操作" width="">
-            <template slot-scope="{row}">
-              <el-button type="primary" v-if="!row.isDefault" @click="changeDefault(row)">设为默认</el-button>
+            <template slot-scope="{ row }">
+              <el-button
+                type="primary"
+                v-if="!row.isDefault"
+                @click="changeDefault(row)"
+                >设为默认</el-button
+              >
               <el-button v-else @click="cancelDefault(row)">取消默认</el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary">保存</el-button>
+        <el-button type="primary" @click="save">保存</el-button>
         <el-button @click="cancel">取消</el-button>
       </el-form-item>
     </el-form>
@@ -110,11 +132,11 @@ export default {
         //第三类：通过代码收集
         skuImageList: [],
         skuDefaultImg: "",
-        skuAttrValue: [], //平台属性
+        skuAttrValueList: [], //平台属性
         skuSaleAttrValueList: [], //销售属性
       },
       spu: {},
-      tempImgList:[],//暂时存放选中的图片，但此时的数据缺少isDefault
+      tempImgList: [], //暂时存放选中的图片
     };
   },
   methods: {
@@ -125,9 +147,9 @@ export default {
       this.spu = spu;
       let imgRes = await req.sku.reqSpuImageList(spu.id);
       if (imgRes.code === 200) {
-        imgRes.data.forEach(item=>{
-          item.isDefault=0
-        })
+        imgRes.data.forEach((item) => {
+          item.isDefault = 0;
+        });
         this.spuImageList = imgRes.data;
       }
       let saleAttrRes = await req.sku.reqSpuSaleAttrList(spu.id);
@@ -143,24 +165,64 @@ export default {
         this.attrInfoList = attrInfoRes.data;
       }
     },
-    handleSelectionChange(selection){
-      this.tempImgList=selection
+    handleSelectionChange(selection) {
+      this.tempImgList = selection;
     },
-    changeDefault(row){
-      this.spuImageList.forEach(item=>{
-        item.isDefault=0
-      })
-      row.isDefault=1
-      this.skuInfo.skuDefaultImg=row.imgUrl
+    changeDefault(row) {
+      this.spuImageList.forEach((item) => {
+        item.isDefault = 0;
+      });
+      row.isDefault = 1;
+      this.skuInfo.skuDefaultImg = row.imgUrl;
     },
-    cancelDefault(row){
-      row.isDefault=0
-      this.skuInfo.skuDefaultImg=''
+    cancelDefault(row) {
+      row.isDefault = 0;
+      this.skuInfo.skuDefaultImg = "";
     },
-    cancel(){
-      this.$emit("changeShowTable", {show:0,flag:'update'});
-      Object.assign(this._data,this.$options.data())
-    }
+    cancel() {
+      this.$emit("changeShowTable", { show: 0, flag: "update" });
+      Object.assign(this._data, this.$options.data());
+    },
+    async save() {
+      this.attrInfoList.forEach((item) => {
+        if (item.attrIdAndValueId) {
+          const [attrId, valueId] = item.attrIdAndValueId.split(":");
+          this.skuInfo.skuAttrValueList.push({ attrId, valueId });
+        }
+      });
+      this.spuSaleAttrList.forEach((item) => {
+        if (item.attrIdAndValueId) {
+          const [saleAttrId, saleAttrValueId] =
+            item.attrIdAndValueId.split(":");
+          this.skuInfo.skuSaleAttrValueList.push({
+            saleAttrId,
+            saleAttrValueId,
+          });
+        }
+      });
+      this.skuInfo.skuImageList = this.tempImgList.map((item) => {
+        return {
+          imgName: item.imgName,
+          imgUrl: item.imgUrl,
+          isDefault: item.isDefault,
+          spuImgId: item.id,
+        };
+      });
+      let res = await req.spu.reqAddSku(this.skuInfo);
+      if (res.code === 200) {
+        this.$message({
+          type: "success",
+          message: "保存成功",
+        });
+        this.$emit("changeShowTable", { show: 0, flag: "update" });
+        Object.assign(this._data, this.$options.data());
+      } else {
+        this.$message({
+          type: "error",
+          message: "保存失败",
+        });
+      }
+    },
   },
 };
 </script>
